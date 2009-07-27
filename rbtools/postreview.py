@@ -1870,7 +1870,7 @@ class GitClient(SCMClient):
                 if m:
                     uuid = m.group(1)
                     self.type = "svn"
-
+                    self.upstream = options.upstream or 'git-svn'
                     return SvnRepositoryInfo(path=path, base_path=base_path,
                                              uuid=uuid,
                                              supports_parent_diffs=True)
@@ -1898,7 +1898,8 @@ class GitClient(SCMClient):
         # TODO
 
         # Nope, it's git then.
-        origin = execute(["git", "remote", "show", "origin"])
+        self.upstream = options.upstream or 'origin'
+        origin = execute(["git", "remote", "show", self.upstream])
         m = re.search(r'URL: (.+)', origin)
         if m:
             url = m.group(1).rstrip('/')
@@ -1950,13 +1951,13 @@ class GitClient(SCMClient):
         Performs a diff across all modified files in the branch, taking into
         account a parent branch.
         """
-        parent_branch = options.parent_branch or "master"
+        parent_branch = options.parent_branch
 
-        diff_lines = self.make_diff(parent_branch)
-
-        if parent_branch != "master":
-            parent_diff_lines = self.make_diff("master", parent_branch)
+        if parent_branch is not None:
+            diff_lines = self.make_diff(parent_branch)
+            parent_diff_lines = self.make_diff(self.upstream, parent_branch)
         else:
+            diff_lines = self.make_diff(self.upstream)
             parent_diff_lines = None
 
         if options.guess_summary and not options.summary:
@@ -1982,7 +1983,7 @@ class GitClient(SCMClient):
             return self.make_svn_diff(parent_branch, diff_lines)
         elif self.type == "git":
             return execute(["git", "diff", "--no-color", "--full-index",
-                            parent_branch])
+                            "%s..%s" % (parent_branch, source_branch)])
 
         return None
 
@@ -2036,7 +2037,11 @@ class GitClient(SCMClient):
         return diff_data
 
     def diff_between_revisions(self, revision_range, args, repository_info):
-        pass
+        """
+        Perform a diff between two arbitrary revisions
+        """
+        r1, r2 = revision_range.split(":")
+        return self.make_diff(r1, r2)
 
 
 SCMCLIENTS = (
@@ -2373,6 +2378,11 @@ def parse_options(args):
                       help="the parent branch this diff should be against "
                            "(only available if your repository supports "
                            "parent diffs)")
+    parser.add_option("--upstream",
+                      dest="upstream", default=None,
+                      metavar="UPSTREAM",
+                      help="Upstream remote to diff against (git only, "
+                           "defaults to origin)")
     parser.add_option("--p4-client",
                       dest="p4_client", default=None,
                       help="the Perforce client name that the review is in")

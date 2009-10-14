@@ -108,6 +108,16 @@ class GitClientTests(unittest.TestCase):
         return execute(full_command, env, split_lines, ignore_errors,
                        extra_ignore_errors, translate_newlines)
 
+    def _git_add_file_commit(self, file, data, msg):
+        """Add a file to a git repository with the content of data
+           and commit with msg.
+        """
+        foo = open(file, 'w')
+        foo.write(data)
+        foo.close()
+        self._gitcmd(['add', file])
+        self._gitcmd(['commit', '-m', msg])
+
     def setUp(self):
         if not is_exe_in_path('git'):
             raise nose.SkipTest('git not found in path')
@@ -194,11 +204,7 @@ class GitClientTests(unittest.TestCase):
         os.chdir(self.clone_dir)
         ri = self.client.get_repository_info()
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'delete and modify stuff'])
+        self._git_add_file_commit('foo.txt', FOO1, 'delete and modify stuff')
 
         self.assertEqual(self.client.diff(None), (diff, None))
 
@@ -228,23 +234,9 @@ class GitClientTests(unittest.TestCase):
         os.chdir(self.clone_dir)
         ri = self.client.get_repository_info()
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 1'])
-
-        foo = open('foo.txt', 'w')
-        foo.write(FOO2)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 2'])
-
-        foo = open('foo.txt', 'w')
-        foo.write(FOO3)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 3'])
+        self._git_add_file_commit('foo.txt', FOO1, 'commit 1')
+        self._git_add_file_commit('foo.txt', FOO2, 'commit 1')
+        self._git_add_file_commit('foo.txt', FOO3, 'commit 1')
 
         self.assertEqual(self.client.diff(None), (diff, None))
 
@@ -285,18 +277,10 @@ class GitClientTests(unittest.TestCase):
 
         os.chdir(self.clone_dir)
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 1'])
+        self._git_add_file_commit('foo.txt', FOO1, 'commit 1')
 
         self._gitcmd(['checkout', '-b', 'mybranch', '--track', 'origin/master'])
-        foo = open('foo.txt', 'w')
-        foo.write(FOO2)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 2'])
+        self._git_add_file_commit('foo.txt', FOO2, 'commit 2')
 
         ri = self.client.get_repository_info()
         self.assertEqual(self.client.diff(None), (diff1, None))
@@ -322,15 +306,11 @@ class GitClientTests(unittest.TestCase):
 
         os.chdir(self.clone_dir)
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
         self._gitcmd(['remote', 'rm', 'origin'])
         self._gitcmd(['remote', 'add', 'quux', self.git_dir])
         self._gitcmd(['fetch', 'quux'])
         self._gitcmd(['checkout', '-b', 'mybranch', '--track', 'quux/master'])
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'delete and modify stuff'])
+        self._git_add_file_commit('foo.txt', FOO1, 'delete and modify stuff')
 
         ri = self.client.get_repository_info()
 
@@ -360,18 +340,10 @@ class GitClientTests(unittest.TestCase):
 
         os.chdir(self.clone_dir)
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 1'])
+        self._git_add_file_commit('foo.txt', FOO1, 'commit 1')
 
         self._gitcmd(['checkout', '-b', 'mybranch', '--track', 'master'])
-        foo = open('foo.txt', 'w')
-        foo.write(FOO2)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 2'])
+        self._git_add_file_commit('foo.txt', FOO2, 'commit 2')
 
         ri = self.client.get_repository_info()
         self.assertEqual(self.client.diff(None), (diff, None))
@@ -398,11 +370,7 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['fetch', 'bad'])
         self._gitcmd(['checkout', '-b', 'mybranch', '--track', 'bad/master'])
 
-        foo = open('foo.txt', 'w')
-        foo.write(FOO1)
-        foo.close()
-        self._gitcmd(['add', 'foo.txt'])
-        self._gitcmd(['commit', '-m', 'commit 1'])
+        self._git_add_file_commit('foo.txt', FOO1, 'commit 1')
 
         ri = self.client.get_repository_info()
         self.assertEqual(self.client.diff(None), (diff, None))

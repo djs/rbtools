@@ -140,6 +140,7 @@ class GitClientTests(unittest.TestCase):
         shutil.rmtree(self.clone_dir)
 
     def test_get_repository_info_simple(self):
+        """Test GitClient get_repository_info, simple case"""
         os.chdir(self.clone_dir)
         ri = self.client.get_repository_info()
         self.assert_(isinstance(ri, RepositoryInfo))
@@ -149,6 +150,7 @@ class GitClientTests(unittest.TestCase):
         self.assertFalse(ri.supports_changesets)
 
     def test_scan_for_server_simple(self):
+        """Test GitClient scan_for_server, simple case"""
         os.chdir(self.clone_dir)
         ri = self.client.get_repository_info()
 
@@ -156,6 +158,7 @@ class GitClientTests(unittest.TestCase):
         self.assert_(server is None)
 
     def test_scan_for_server_reviewboardrc(self):
+        "Test GitClient scan_for_server, .reviewboardrc case"""
         os.chdir(self.clone_dir)
         rc = open(os.path.join(self.clone_dir, '.reviewboardrc'), 'w')
         rc.write('REVIEWBOARD_URL = "http://127.0.0.1:8080"')
@@ -166,6 +169,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(server, "http://127.0.0.1:8080")
 
     def test_scan_for_server_property(self):
+        """Test GitClientscan_for_server using repo property"""
         os.chdir(self.clone_dir)
         self._gitcmd(['config', 'reviewboard.url', "http://127.0.0.1:8080"])
         ri = self.client.get_repository_info()
@@ -173,7 +177,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.scan_for_server(ri), "http://127.0.0.1:8080")
 
     def test_diff_simple(self):
-
+        """Test GitClient simple diff case"""
         diff = "diff --git a/foo.txt b/foo.txt\n" \
                "index 634b3e8ff85bada6f928841a9f2c505560840b3a..5e98e9540e1b741b5be24fcb33c40c1c8069c1fb 100644\n" \
                "--- a/foo.txt\n" \
@@ -199,6 +203,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_simple_multiple(self):
+        """Test GitClient simple diff with multiple commits case"""
         diff = "diff --git a/foo.txt b/foo.txt\n" \
                "index 634b3e8ff85bada6f928841a9f2c505560840b3a..63036ed3fcafe870d567a14dd5884f4fed70126c 100644\n" \
                "--- a/foo.txt\n" \
@@ -244,6 +249,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_branch_diverge(self):
+        """Test GitClient diff with divergent branches"""
         diff1 = "diff --git a/foo.txt b/foo.txt\n" \
                 "index 634b3e8ff85bada6f928841a9f2c505560840b3a..e619c1387f5feb91f0ca83194650bfe4f6c2e347 100644\n" \
                 "--- a/foo.txt\n" \
@@ -300,6 +306,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.diff(None), (diff2, None))
 
     def test_diff_tracking_no_origin(self):
+        """Test GitClient diff with a tracking branch, but no origin remote"""
         diff = "diff --git a/foo.txt b/foo.txt\n" \
                "index 634b3e8ff85bada6f928841a9f2c505560840b3a..5e98e9540e1b741b5be24fcb33c40c1c8069c1fb 100644\n" \
                "--- a/foo.txt\n" \
@@ -330,6 +337,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_local_tracking(self):
+        """Test GitClient diff with a local tracking branch"""
         diff = "diff --git a/foo.txt b/foo.txt\n" \
                "index 634b3e8ff85bada6f928841a9f2c505560840b3a..e619c1387f5feb91f0ca83194650bfe4f6c2e347 100644\n" \
                "--- a/foo.txt\n" \
@@ -369,6 +377,7 @@ class GitClientTests(unittest.TestCase):
         self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_tracking_override(self):
+        """Test GitClient diff with option override for tracking branch"""
         diff = "diff --git a/foo.txt b/foo.txt\n" \
                "index 634b3e8ff85bada6f928841a9f2c505560840b3a..5e98e9540e1b741b5be24fcb33c40c1c8069c1fb 100644\n" \
                "--- a/foo.txt\n" \

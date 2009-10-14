@@ -1971,11 +1971,11 @@ class GitClient(SCMClient):
                                         '--format', '%(upstream:short)',
                                         self.head_ref]).strip()
 
-        (self.upstream_branch, origin) = self.get_origin(self.upstream_branch,
+        self.upstream_branch, origin = self.get_origin(self.upstream_branch,
                                                          True)
 
         if origin.startswith("fatal:"):
-            (self.upstream_branch, origin) = self.get_origin()
+            self.upstream_branch, origin = self.get_origin()
 
         m = re.search(r'URL: (.+)', origin)
         if m:
@@ -1988,12 +1988,16 @@ class GitClient(SCMClient):
         return None
 
     def get_origin(self, default_upstream_branch=None, ignore_errors=False):
-        """Returns a tuple: (upstream_branch, remote)"""
+        """Get upstream remote origin from options or parameters
+
+        Returns a tuple: (upstream_branch, remote)
+        """
         upstream_branch = options.tracking or default_upstream_branch or \
                           'origin/master'
         upstream_remote = upstream_branch.split('/')[0]
         origin = execute(["git", "remote", "show", upstream_remote],
                 ignore_errors=ignore_errors)
+
         return (upstream_branch, origin)
 
 

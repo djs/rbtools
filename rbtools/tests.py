@@ -1,9 +1,9 @@
 import nose
-import unittest
-import tempfile
 import os
-import sys
 import shutil
+import sys
+import tempfile
+import unittest
 
 from rbtools.postreview import execute, load_config_file
 from rbtools.postreview import GitClient, RepositoryInfo
@@ -86,6 +86,7 @@ def is_exe_in_path(name):
 
     return False
 
+
 class OptionsStub(object):
     def __init__(self):
         self.debug = True
@@ -93,20 +94,19 @@ class OptionsStub(object):
         self.guess_description = False
         self.tracking = None
 
-class GitClientTests(unittest.TestCase):
-    """
-    """
 
+class GitClientTests(unittest.TestCase):
     def _gitcmd(self, command, env=None, split_lines=False, ignore_errors=False,
                 extra_ignore_errors=(), translate_newlines=True, git_dir=None):
         if git_dir:
             full_command = ['git', '--git-dir=%s/.git' % git_dir]
         else:
             full_command = ['git']
+
         full_command.extend(command)
 
         return execute(full_command, env, split_lines, ignore_errors,
-                extra_ignore_errors, translate_newlines)
+                       extra_ignore_errors, translate_newlines)
 
     def setUp(self):
         if not is_exe_in_path('git'):
@@ -127,7 +127,7 @@ class GitClientTests(unittest.TestCase):
         self.clone_dir = tempfile.mkdtemp()
         os.rmdir(self.clone_dir)
         self._gitcmd(['clone', self.git_dir, self.clone_dir])
-        self.gc = GitClient()
+        self.client = GitClient()
         os.chdir(self.orig_dir)
 
         rbtools.postreview.user_config = load_config_file('')
@@ -141,7 +141,7 @@ class GitClientTests(unittest.TestCase):
 
     def test_get_repository_info_simple(self):
         os.chdir(self.clone_dir)
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
         self.assert_(isinstance(ri, RepositoryInfo))
         self.assertEqual(ri.base_path, '')
         self.assertEqual(ri.path, self.git_dir)
@@ -150,9 +150,9 @@ class GitClientTests(unittest.TestCase):
 
     def test_scan_for_server_simple(self):
         os.chdir(self.clone_dir)
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
 
-        server = self.gc.scan_for_server(ri)
+        server = self.client.scan_for_server(ri)
         self.assert_(server is None)
 
     def test_scan_for_server_reviewboardrc(self):
@@ -161,16 +161,16 @@ class GitClientTests(unittest.TestCase):
         rc.write('REVIEWBOARD_URL = "http://127.0.0.1:8080"')
         rc.close()
 
-        ri = self.gc.get_repository_info()
-        server = self.gc.scan_for_server(ri)
+        ri = self.client.get_repository_info()
+        server = self.client.scan_for_server(ri)
         self.assertEqual(server, "http://127.0.0.1:8080")
 
     def test_scan_for_server_property(self):
         os.chdir(self.clone_dir)
         self._gitcmd(['config', 'reviewboard.url', "http://127.0.0.1:8080"])
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
 
-        self.assertEqual(self.gc.scan_for_server(ri), "http://127.0.0.1:8080")
+        self.assertEqual(self.client.scan_for_server(ri), "http://127.0.0.1:8080")
 
     def test_diff_simple(self):
 
@@ -188,7 +188,7 @@ class GitClientTests(unittest.TestCase):
                " \n"
 
         os.chdir(self.clone_dir)
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
 
         foo = open('foo.txt', 'w')
         foo.write(FOO1)
@@ -196,7 +196,7 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'delete and modify stuff'])
 
-        self.assertEqual(self.gc.diff(None), (diff, None))
+        self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_simple_multiple(self):
         diff = "diff --git a/foo.txt b/foo.txt\n" \
@@ -221,7 +221,7 @@ class GitClientTests(unittest.TestCase):
                " \n"
 
         os.chdir(self.clone_dir)
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
 
         foo = open('foo.txt', 'w')
         foo.write(FOO1)
@@ -241,7 +241,7 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'commit 3'])
 
-        self.assertEqual(self.gc.diff(None), (diff, None))
+        self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_branch_diverge(self):
         diff1 = "diff --git a/foo.txt b/foo.txt\n" \
@@ -292,11 +292,12 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'commit 2'])
 
-        ri = self.gc.get_repository_info()
-        self.assertEqual(self.gc.diff(None), (diff1, None))
+        ri = self.client.get_repository_info()
+        self.assertEqual(self.client.diff(None), (diff1, None))
+
         self._gitcmd(['checkout', 'master'])
-        ri = self.gc.get_repository_info()
-        self.assertEqual(self.gc.diff(None), (diff2, None))
+        ri = self.client.get_repository_info()
+        self.assertEqual(self.client.diff(None), (diff2, None))
 
     def test_diff_tracking_no_origin(self):
         diff = "diff --git a/foo.txt b/foo.txt\n" \
@@ -324,9 +325,9 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'delete and modify stuff'])
 
-        ri = self.gc.get_repository_info()
+        ri = self.client.get_repository_info()
 
-        self.assertEqual(self.gc.diff(None), (diff, None))
+        self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_local_tracking(self):
         diff = "diff --git a/foo.txt b/foo.txt\n" \
@@ -364,8 +365,8 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'commit 2'])
 
-        ri = self.gc.get_repository_info()
-        self.assertEqual(self.gc.diff(None), (diff, None))
+        ri = self.client.get_repository_info()
+        self.assertEqual(self.client.diff(None), (diff, None))
 
     def test_diff_tracking_override(self):
         diff = "diff --git a/foo.txt b/foo.txt\n" \
@@ -394,6 +395,6 @@ class GitClientTests(unittest.TestCase):
         self._gitcmd(['add', 'foo.txt'])
         self._gitcmd(['commit', '-m', 'commit 1'])
 
-        ri = self.gc.get_repository_info()
-        self.assertEqual(self.gc.diff(None), (diff, None))
+        ri = self.client.get_repository_info()
+        self.assertEqual(self.client.diff(None), (diff, None))
 

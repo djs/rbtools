@@ -96,6 +96,8 @@ class OptionsStub(object):
 
 
 class GitClientTests(unittest.TestCase):
+    TESTSERVER = "http://127.0.0.1:8080"
+
     def _gitcmd(self, command, env=None, split_lines=False, ignore_errors=False,
                 extra_ignore_errors=(), translate_newlines=True, git_dir=None):
         if git_dir:
@@ -110,7 +112,7 @@ class GitClientTests(unittest.TestCase):
 
     def _git_add_file_commit(self, file, data, msg):
         """Add a file to a git repository with the content of data
-           and commit with msg.
+        and commit with msg.
         """
         foo = open(file, 'w')
         foo.write(data)
@@ -171,20 +173,20 @@ class GitClientTests(unittest.TestCase):
         "Test GitClient scan_for_server, .reviewboardrc case"""
         os.chdir(self.clone_dir)
         rc = open(os.path.join(self.clone_dir, '.reviewboardrc'), 'w')
-        rc.write('REVIEWBOARD_URL = "http://127.0.0.1:8080"')
+        rc.write('REVIEWBOARD_URL = "%s"' % self.TESTSERVER)
         rc.close()
 
         ri = self.client.get_repository_info()
         server = self.client.scan_for_server(ri)
-        self.assertEqual(server, "http://127.0.0.1:8080")
+        self.assertEqual(server, self.TESTSERVER)
 
     def test_scan_for_server_property(self):
         """Test GitClientscan_for_server using repo property"""
         os.chdir(self.clone_dir)
-        self._gitcmd(['config', 'reviewboard.url', "http://127.0.0.1:8080"])
+        self._gitcmd(['config', 'reviewboard.url', self.TESTSERVER])
         ri = self.client.get_repository_info()
 
-        self.assertEqual(self.client.scan_for_server(ri), "http://127.0.0.1:8080")
+        self.assertEqual(self.client.scan_for_server(ri), self.TESTSERVER)
 
     def test_diff_simple(self):
         """Test GitClient simple diff case"""

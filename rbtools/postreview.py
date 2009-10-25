@@ -1972,7 +1972,7 @@ class GitClient(SCMClient):
                                         self.head_ref]).strip()
 
         self.upstream_branch, origin = self.get_origin(self.upstream_branch,
-                                                         True)
+                                                       True)
 
         if origin.startswith("fatal:"):
             self.upstream_branch, origin = self.get_origin()
@@ -1988,7 +1988,7 @@ class GitClient(SCMClient):
         return None
 
     def get_origin(self, default_upstream_branch=None, ignore_errors=False):
-        """Get upstream remote origin from options or parameters
+        """Get upstream remote origin from options or parameters.
 
         Returns a tuple: (upstream_branch, remote)
         """
@@ -1996,7 +1996,7 @@ class GitClient(SCMClient):
                           'origin/master'
         upstream_remote = upstream_branch.split('/')[0]
         origin = execute(["git", "remote", "show", upstream_remote],
-                ignore_errors=ignore_errors)
+                         ignore_errors=ignore_errors)
 
         return (upstream_branch, origin)
 
@@ -2070,14 +2070,14 @@ class GitClient(SCMClient):
         """
         Performs a diff on a particular branch range.
         """
+        range = "%s..%s" % (ancestor, commit)
+
         if self.type == "svn":
             diff_lines = execute(["git", "diff", "--no-color", "--no-prefix",
-                                  "-r", "-u", "%s..%s" % (ancestor, commit)],
-                                  split_lines=True)
+                                  "-r", "-u", range], split_lines=True)
             return self.make_svn_diff(ancestor, diff_lines)
         elif self.type == "git":
-            return execute(["git", "diff", "--no-color", "--full-index",
-                            "%s..%s" % (ancestor, commit)])
+            return execute(["git", "diff", "--no-color", "--full-index", range])
 
         return None
 

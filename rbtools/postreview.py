@@ -1967,9 +1967,18 @@ class GitClient(SCMClient):
         # Nope, it's git then.
         # Check for a tracking branch and determine merge-base
         self.head_ref = execute(['git', 'symbolic-ref', '-q', 'HEAD']).strip()
-        self.upstream_branch = execute(['git', 'for-each-ref',
-                                        '--format', '%(upstream:short)',
-                                        self.head_ref]).strip()
+        short_head = self.head_ref.split('/')[-1]
+        merge = execute(['git', 'config', '--get',
+                        'branch.%s.merge' % short_head], ignore_errors=True)\
+                        .strip()
+        remote = execute(['git', 'config', '--get', 'branch.%s.remote' %
+                         short_head], ignore_errors=True).strip()
+        merge = merge.lstrip('refs/heads/')
+
+        self.upstream_branch = ''
+
+        if remote and remote != '.' and merge:
+            self.upstream_branch = '%s/%s' % (remote, merge)
 
         self.upstream_branch, origin = self.get_origin(self.upstream_branch,
                                                        True)
